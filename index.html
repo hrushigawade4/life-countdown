@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Life Countdown</title>
+    <style>
+        :root {
+            --bg-color: #f7f7f7;
+            --text-color: #000;
+            --container-bg: white;
+            --quote-color: #555;
+            --progress-bg: #ddd;
+            --progress-fill: #2ecc71;
+            --button-bg: #3498db;
+            --button-text: white;
+        }
+
+        .dark-mode {
+            --bg-color: #121212;
+            --text-color: #f5f5f5;
+            --container-bg: #1e1e1e;
+            --quote-color: #aaa;
+            --progress-bg: #444;
+            --progress-fill: #76d7c4;
+            --button-bg: #4a90e2;
+            --button-text: white;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+                url("https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=1920&q=80");
+            background-size: cover;
+            background-position: center;
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            font-size: 1rem;
+            margin: 1rem 0;
+            width: 80%;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--progress-bg);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: var(--progress-fill);
+            width: 0%;
+            transition: width 1s;
+        }
+
+        .quote {
+            margin-top: 30px;
+            font-style: italic;
+            color: var(--quote-color);
+            font-size: 1rem;
+            min-height: 60px;
+        }
+
+        .top-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Controls -->
+    <div class="top-controls">
+        <button onclick="toggleTheme()">🌓 Theme</button>
+        <button onclick="toggleMusic()">🎵 Music</button>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="bgMusic" loop>
+        <source src="calm-music.mp3" type="audio/mpeg" />
+    </audio>
+
+    <audio id="chime">
+        <source src="chime.mp3" type="audio/mpeg" />
+    </audio>
+
+    <div class="container">
+        <h2>Life Time Left Calculator</h2>
+        <p>Average life expectancy is 70 years</p>
+        <input type="number" id="ageInput" placeholder="Enter your current age" min="0" max="70" />
+        <br />
+        <button onclick="calculate()">Calculate Time Left</button>
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="result" id="result"></div>
+        <div class="quote" id="quoteArea">✨ Your journey quote will appear here.</div>
+    </div>
+
+    <script>
+        let timer, quoteTimer;
+        let musicPlaying = false;
+
+        const quotes = [
+            "Believe in yourself and all that you are.",
+            "Small steps every day lead to big results.",
+            "Dream big. Start small. Act now.",
+            "Discipline beats motivation every time.",
+            "Push yourself. No one else is going to do it for you.",
+            "Consistency is the key to success.",
+            "Visualize your highest self, then show up as that person.",
+            "Be stronger than your excuses.",
+            "It always seems impossible until it’s done.",
+            "The best project you'll ever work on is YOU.",
+            "Start before you're ready. Leap and build your wings on the way down.",
+            "Never stop learning, because life never stops teaching."
+        ];
+
+        function calculate() {
+            clearInterval(timer);
+            clearInterval(quoteTimer);
+
+            const age = parseFloat(document.getElementById("ageInput").value);
+            const maxAge = 70;
+
+            if (isNaN(age) || age < 0 || age > maxAge) {
+                document.getElementById("result").innerHTML = "Please enter a valid age (0 - 70)";
+                return;
+            }
+
+            const yearsLeft = maxAge - age;
+            const monthsLeft = yearsLeft * 12;
+            const daysLeft = yearsLeft * 365.25;
+            let secondsLeft = Math.floor(daysLeft * 24 * 60 * 60);
+
+            const percentageLived = (age / maxAge) * 100;
+            document.getElementById("progressBar").style.width = `${percentageLived}%`;
+
+            updateDisplay(yearsLeft, monthsLeft, daysLeft, secondsLeft);
+            showQuote();
+
+            timer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(timer);
+                    clearInterval(quoteTimer);
+                    document.getElementById("result").innerHTML = "Time's up! 🎉";
+                } else {
+                    updateDisplay(yearsLeft, monthsLeft, daysLeft, secondsLeft);
+                }
+            }, 1000);
+
+            quoteTimer = setInterval(showQuote, 60000);
+        }
+
+        function updateDisplay(years, months, days, seconds) {
+            document.getElementById("result").innerHTML = `
+        <strong>You have:</strong><br/>
+        ${years.toFixed(2)} years<br/>
+        ${months.toFixed(0)} months<br/>
+        ${days.toFixed(0)} days<br/>
+        ${seconds.toLocaleString()} seconds left in your journey.
+      `;
+        }
+
+        function showQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            document.getElementById("quoteArea").innerText = `💡 ${quotes[randomIndex]}`;
+
+            const chime = document.getElementById("chime");
+            chime.currentTime = 0;
+            chime.play();
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("dark-mode");
+        }
+
+        function toggleMusic() {
+            const music = document.getElementById("bgMusic");
+            if (musicPlaying) {
+                music.pause();
+            } else {
+                music.play();
+            }
+            musicPlaying = !musicPlaying;
+        }
+
+        // Auto-refresh daily
+        setTimeout(() => {
+            location.reload();
+        }, 1000 * 60 * 60 * 24);
+    </script>
+</body>
+
+</html>
